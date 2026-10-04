@@ -7,6 +7,12 @@ python3 -B -m unittest discover -s tests -v
 ```
 
 Требуются Python 3.9+, Bash и jq. Python-пакеты устанавливать не нужно.
+GitHub Actions запускает эту же команду на Ubuntu с Python 3.9 при push и
+pull request, затрагивающих `gws-drive/`, `gws-sheets/`, `tests/` или сам
+workflow `.github/workflows/local-tests.yml`. Доступен также ручной запуск
+через `workflow_dispatch`. Bash и jq устанавливаются отдельным шагом.
+Облачная интеграционная проверка в CI не запускается.
+
 Тесты не вызывают Claude, Codex, модели, настоящий gws или Google API.
 Временные файлы удаляются после каждого теста. PATH изолирован: доступен
 только подставной gws и необходимые локальные утилиты.

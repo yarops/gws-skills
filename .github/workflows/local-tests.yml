@@ -1,0 +1,39 @@
+name: Local skill tests
+
+on:
+  push:
+    paths:
+      - 'gws-drive/**'
+      - 'gws-sheets/**'
+      - 'tests/**'
+      - '.github/workflows/local-tests.yml'
+  pull_request:
+    paths:
+      - 'gws-drive/**'
+      - 'gws-sheets/**'
+      - 'tests/**'
+      - '.github/workflows/local-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.9'
+      - name: Install Bash and jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends bash jq
+      - name: Run offline tests
+        run: python3 -B -m unittest discover -s tests -v

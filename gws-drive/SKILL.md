@@ -1,6 +1,6 @@
 ---
 name: gws-drive
-description: Use the gws CLI (Google Workspace CLI) to manage Google Drive from the terminal — list/search files and folders, upload, download, create folders, move files between folders, share via permissions, delete. Trigger whenever the user wants to read, upload, organize, search, or share files in Google Drive from the command line, or mentions gws, Google Drive uploads/downloads/sharing, "залить файл на гугл диск", "найти файл на диске", "расшарить файл/папку" — even if they don't say "Google Drive API" explicitly.
+description: Manage files and folders in Google Drive through the gws CLI — search, upload, download, move, and share. Use when Google Drive is the source or destination of files, including Russian requests about гугл диск. For cell values and spreadsheet formatting, use the Sheets skill.
 ---
 
 # gws drive
@@ -21,17 +21,19 @@ gws drive <resource> <method> [--params '<JSON>'] [--json '<JSON>'] [--format js
 
 **Найти файлы по имени:**
 ```
-gws drive files list --params '{"q": "name contains '\''report'\'' and trashed = false", "pageSize": 20}'
+gws drive files list --params '{"q": "name contains '\''report'\'' and trashed = false", "pageSize": 20, "fields": "nextPageToken,files(id,name,mimeType,webViewLink)"}'
 ```
 
 **Файлы внутри конкретной папки:**
 ```
-gws drive files list --params '{"q": "'\''FOLDER_ID'\'' in parents", "pageSize": 100}'
+gws drive files list --params '{"q": "'\''FOLDER_ID'\'' in parents and trashed = false", "pageSize": 100, "fields": "nextPageToken,files(id,name,mimeType)"}'
 ```
+
+Не считай одну страницу полным списком. Если есть `nextPageToken`, передай его как `pageToken` в следующий запрос. `--page-all` выдаёт NDJSON (по JSON на страницу), но по умолчанию ограничен 10 страницами: задай подходящий `--page-limit` и проверь, что в последней странице нет `nextPageToken`. Для полного подсчёта обработай все страницы.
 
 **Метаданные одного файла:**
 ```
-gws drive files get --params '{"fileId": "FILE_ID"}'
+gws drive files get --params '{"fileId": "FILE_ID", "fields": "id,name,mimeType,parents,owners,modifiedTime,size,webViewLink"}'
 ```
 
 **Загрузить локальный файл:**
@@ -41,9 +43,13 @@ gws drive +upload ./report.csv --parent FOLDER_ID --name "Отчёт.csv"
 
 **Скачать файл:**
 ```
-gws drive files download --params '{"fileId": "FILE_ID"}' --output ./local/report.pdf
+gws drive files get --params '{"fileId": "FILE_ID", "alt": "media"}' --output ./local/report.pdf
 ```
-Ссылка на скачивание действительна 24 часа от момента создания — если истекла, просто выполни запрос заново.
+Для Google Docs/Sheets/Slides используй экспорт, выбрав поддерживаемый MIME-тип:
+```
+gws drive files export --params '{"fileId": "FILE_ID", "mimeType": "application/pdf"}' --output ./local/report.pdf
+```
+`files download` возвращает длительную операцию, а не байты файла: если нужен именно этот метод, обработай статус операции и полученный URL скачивания. Перед записью проверь, что локальная папка существует и выбранный путь не перезапишет нужный файл.
 
 **Создать папку:**
 ```
@@ -79,4 +85,4 @@ gws schema drive.permissions.create --resolve-refs
 - `gws drive files delete` удаляет файл **навсегда**, минуя корзину.
 - `gws drive files emptyTrash` безвозвратно чистит всю корзину пользователя.
 
-Перед такими вызовами подтверди с пользователем, что и зачем удаляется — как с любым деструктивным действием, затрагивающим данные за пределами локального репозитория — и, где возможно, сначала прогони с `--dry-run`, чтобы проверить валидность запроса без реальной отправки.
+Для обычного удаления предпочитай корзину: `files update` с телом `{"trashed": true}`. Для безвозвратного удаления нужна явная авторизация на конкретные файлы или очистку корзины; если она уже получена, не спрашивай повторно. `--dry-run` проверяет запрос локально, но не права доступа и не фактический результат. После изменения проверь метаданные или права доступа.

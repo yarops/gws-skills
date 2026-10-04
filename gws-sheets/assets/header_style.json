@@ -3,7 +3,7 @@
     {
       "repeatCell": {
         "range": {
-          "sheetId": __SHEET_ID__,
+          "sheetId": 0,
           "startRowIndex": 0,
           "endRowIndex": 1
         },
@@ -24,7 +24,7 @@
     {
       "updateSheetProperties": {
         "properties": {
-          "sheetId": __SHEET_ID__,
+          "sheetId": 0,
           "gridProperties": { "frozenRowCount": 1 }
         },
         "fields": "gridProperties.frozenRowCount"
@@ -33,10 +33,10 @@
     {
       "autoResizeDimensions": {
         "dimensions": {
-          "sheetId": __SHEET_ID__,
+          "sheetId": 0,
           "dimension": "COLUMNS",
           "startIndex": 0,
-          "endIndex": 12
+          "endIndex": 1
         }
       }
     }

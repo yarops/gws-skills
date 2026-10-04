@@ -1,6 +1,6 @@
 ---
 name: gws-sheets
-description: Use the gws CLI (Google Workspace CLI) to read and write Google Sheets from the terminal — create spreadsheets, read/write ranges, append rows, and apply the bundled consistent header styling via scripts/create_tracker.sh. Trigger whenever the user wants to create a tracking table/tracker, export data to Google Sheets, read values from an existing sheet, or build a spreadsheet with a consistent look, or mentions gws, "гугл таблица", "сделай таблицу для трекинга/учёта", "залей данные в гугл шит" — even if they don't say "Google Sheets API" explicitly.
+description: Create, read, and edit Google Sheets through the gws CLI, including ranges, rows, and spreadsheet formatting. Use for Google Sheets or гугл таблицы tasks; a request for a generic local table or tracker alone does not require this skill.
 ---
 
 # gws sheets
@@ -17,13 +17,21 @@ gws sheets <resource> <method> [--params '<JSON>'] [--json '<JSON>']
 
 ## Создать таблицу с готовым оформлением (рекомендуемый путь)
 
-Для любой новой рабочей/трекинговой таблицы используй `scripts/create_tracker.sh` вместо ручной сборки `batchUpdate` — так оформление заголовка одинаковое во всех таблицах, созданных через этот скилл, и не нужно каждый раз заново собирать JSON-схему форматирования:
+Для новой рабочей/трекинговой Google-таблицы со стандартным оформлением используй `scripts/create_tracker.sh` вместо ручной сборки `batchUpdate` — так оформление заголовка одинаковое во всех таблицах, созданных через этот скилл, и не нужно каждый раз заново собирать JSON-схему форматирования:
 
 ```
-scripts/create_tracker.sh "SEO: сведение контента по ключам" "URL,Title,H1,Текущие ключи,Кластер,Частотность,Приоритет,Статус" "Страницы"
+"$SKILL_DIR/scripts/create_tracker.sh" "SEO: сведение контента по ключам" '["URL","Title","H1","Текущие ключи","Кластер","Частотность","Приоритет","Статус"]' "Страницы"
 ```
 
-Аргументы: название таблицы, заголовки колонок через запятую, необязательное название листа (по умолчанию `Sheet1`). Скрипт создаёт spreadsheet, пишет строку заголовков, применяет стиль из `assets/header_style.json` (жирный белый текст на тёмном фоне, закреплённая первая строка) и печатает `spreadsheetUrl` в stdout — покажи эту ссылку пользователю.
+Перед запуском установи `SKILL_DIR` в абсолютный путь директории этого скилла (по местоположению прочитанного `SKILL.md`); текущий каталог проекта не является директорией скилла. Требуются `gws` и `jq`.
+
+Аргументы: название таблицы, непустой JSON-массив заголовков, необязательное название вкладки (по умолчанию `Sheet1`). Скрипт создаёт spreadsheet, затем записывает заголовки как буквальный текст по `sheetId` и применяет стиль из `assets/header_style.json`. Обычная таблица настраивается одним `batchUpdate`; большая строка заголовков разбивается на запросы по размеру UTF-8 JSON ячеек (до 60000 байт плюс обёртка). Оформление применяется в последнем запросе. При сбое часть заголовков может быть записана; `--resume` повторяет запись с первой колонки. JSON отдельной ячейки больше 60000 байт отклоняется до создания файла. Оформление и автоширина ограничены числом заголовков. Ссылка выводится в stdout после успеха, а ID и URL — в stderr сразу после получения.
+
+Если настройка прервалась, продолжи без создания дубля:
+```
+"$SKILL_DIR/scripts/create_tracker.sh" --resume SPREADSHEET_ID '["URL","Title","H1","Текущие ключи","Кластер","Частотность","Приоритет","Статус"]' "Страницы"
+```
+Передай те же заголовки и вкладку. Режим перезаписывает соответствующие ячейки первой строки и повторяет оформление; используй его для восстановления этой новой таблицы, а не для произвольной существующей таблицы. При неопределённом результате создания сначала найди файл в Drive; не запускай создание вслепую ещё раз.
 
 Если нужен другой визуальный стиль на постоянной основе — заведи ещё один файл-шаблон в `assets/` (например `header_style_light.json`), а не правь JSON на лету для одного запуска — так стиль остаётся переиспользуемым, а не одноразовым хаком.
 
@@ -36,13 +44,19 @@ gws sheets +read --spreadsheet SPREADSHEET_ID --range "Страницы!A1:H100"
 
 **Дописать строки в конец:**
 ```
-gws sheets +append --spreadsheet SPREADSHEET_ID --json-values '[["https://example.com/page","Title","..."]]'
+gws sheets spreadsheets values append \
+  --params '{"spreadsheetId": "SPREADSHEET_ID", "range": "'\''Страницы'\''!A:H", "valueInputOption": "RAW", "insertDataOption": "INSERT_ROWS"}' \
+  --json '{"values": [["https://example.com/page","Title","..."]]}'
 ```
+
+Для многолистовой таблицы указывай вкладку явно через `values append`; хелпер `+append` не принимает целевой диапазон. После добавления проверь `updates.updatedRange`. При сетевом сбое проверь, появились ли строки, прежде чем повторять append: повтор может создать дубли.
+
+Имена вкладок с пробелами/спецсимволами заключай в одинарные кавычки в A1 notation и экранируй апострофы. Для динамических имён предпочтительнее запись через `sheetId` в `batchUpdate`; JSON собирай через `jq`, а не конкатенацией пользовательского текста.
 
 **Перезаписать диапазон** (например, обновить статус у конкретных строк):
 ```
 gws sheets spreadsheets values update \
-  --params '{"spreadsheetId": "SPREADSHEET_ID", "range": "Страницы!G2:G2", "valueInputOption": "USER_ENTERED"}' \
+  --params '{"spreadsheetId": "SPREADSHEET_ID", "range": "Страницы!H2:H2", "valueInputOption": "USER_ENTERED"}' \
   --json '{"values": [["готово"]]}'
 ```
 `valueInputOption=USER_ENTERED` — значения интерпретируются как если бы их вписал человек (формулы, даты и т.п. распознаются). `RAW` — записываются буквально как строки без интерпретации.
@@ -65,4 +79,6 @@ gws schema sheets.spreadsheets.batchUpdate --resolve-refs
 
 ## Осторожно
 
-У Sheets API нет отмены операций через API. `batchUpdate` с запросами типа `deleteSheet`/`deleteRange`/`deleteDimension`, а также `values update`/`+append` по диапазону, где уже есть данные пользователя (перезапишет их без следа) — подтверждай с пользователем перед реальным вызовом и проверяй через `--dry-run`, где это применимо.
+`values update` перезаписывает указанные ячейки; `values append` дописывает строки после обнаруженной таблицы. Для удаления листов/диапазонов/строк или перезаписи данных нужна авторизация на конкретный объём изменений. Учитывай уже полученное поручение и не запрашивай повторное подтверждение той же операции; уточняй, если фактический объём выходит за его рамки.
+
+Для импортируемого текста используй `RAW`; `USER_ENTERED` выбирай, когда нужны формулы или распознавание дат/чисел. `--dry-run` проверяет запрос локально и не доказывает правильность целевого диапазона или доступность таблицы. После записи перечитай изменённый диапазон. У API нет отдельного метода undo.

@@ -59,7 +59,7 @@ class SkillFilesTests(OfflineCase):
     def test_documented_commands_parse_and_have_valid_json(self):
         count = 0
         for name in ("gws-drive", "gws-sheets"):
-            text = (ROOT / name / "SKILL.md").read_text()
+            text = (ROOT / name / "references/bash.md").read_text()
             for block in re.findall(r"```[^\n]*\n(.*?)```", text, re.S):
                 # Syntax placeholders are not executable examples.
                 if not block.startswith("gws ") or "<resource>" in block:

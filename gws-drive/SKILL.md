@@ -8,18 +8,30 @@ description: Manage files and folders in Google Drive through the gws CLI — se
 `gws` — локальная CLI-обёртка над Google API (бинарник `gws`, авторизован через OAuth2). Форма вызова для Drive:
 
 ```
-gws drive <resource> <method> [--params '<JSON>'] [--json '<JSON>'] [--format json|table|yaml|csv]
+gws drive <resource> <method> [--params JSON] [--json JSON] [--format json|table|yaml|csv]
 ```
 
 `--params` — query/path-параметры (например `fileId`, `q`), `--json` — тело запроса (для `create`/`update`/`copy`). Для загрузки файла есть хелпер `gws drive +upload <file> [--parent ID] [--name NAME]` — он сам определяет MIME-тип и собирает multipart-запрос, используй его вместо ручного `files create` с загрузкой контента.
 
 ## Окружение и оболочка
 
-Примеры ниже используют Bash/zsh. Учитывай оболочку инструмента выполнения
-команд из контекста агента: в PowerShell адаптируй кавычки, переменные и переносы
-строк. Windows с WSL или Git Bash использует другие правила, чем PowerShell.
-Не определяй оболочку только по ОС. Сложный JSON собирай средствами доступного
-окружения; не вставляй пользовательские строки в shell-команды конкатенацией.
+Перед выполнением команд выбери оболочку **инструмента выполнения агента** по
+его контексту или настройкам. Не определяй её только по ОС, `$SHELL`, встроенному
+терминалу приложения или окружению дочернего Python-процесса. Если сведений нет,
+проверь настроенный исполняемый файл оболочки доступным read-only инструментом;
+если определить его невозможно, уточни оболочку до выполнения команд.
+
+- Bash/zsh, включая WSL и Git Bash: прочитай [команды Bash](references/bash.md).
+- PowerShell: прочитай [команды PowerShell](references/powershell.md); нужны 7.3+
+  и корректная передача аргументов внешним программам.
+- cmd, fish и другие оболочки: используй явный запуск доступного Bash/zsh или
+  PowerShell 7.3+, затем прочитай соответствующий справочник. Не переноси примеры
+  в неизвестную оболочку механически.
+
+Читай только выбранный справочник. При смене среды выполнения выбери его заново.
+Методы API и JSON одинаковы; кавычки, переменные и переносы строк зависят от shell.
+Не используй `eval`, `Invoke-Expression` или конкатенацию пользовательского текста
+в исполняемую команду. Для динамического JSON используй сериализатор.
 
 ## Перед первым вызовом в сессии
 
@@ -28,60 +40,43 @@ gws drive <resource> <method> [--params '<JSON>'] [--json '<JSON>'] [--format js
 ## Частые задачи
 
 **Найти файлы по имени:**
-```
-gws drive files list --params '{"q": "name contains '\''report'\'' and trashed = false", "pageSize": 20, "fields": "nextPageToken,files(id,name,mimeType,webViewLink)"}'
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 **Файлы внутри конкретной папки:**
-```
-gws drive files list --params '{"q": "'\''FOLDER_ID'\'' in parents and trashed = false", "pageSize": 100, "fields": "nextPageToken,files(id,name,mimeType)"}'
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 Не считай одну страницу полным списком. Если есть `nextPageToken`, передай его как `pageToken` в следующий запрос. `--page-all` выдаёт NDJSON (по JSON на страницу), но по умолчанию ограничен 10 страницами: задай подходящий `--page-limit` и проверь, что в последней странице нет `nextPageToken`. Для полного подсчёта обработай все страницы.
 
 **Метаданные одного файла:**
-```
-gws drive files get --params '{"fileId": "FILE_ID", "fields": "id,name,mimeType,parents,owners,modifiedTime,size,webViewLink"}'
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 **Загрузить локальный файл:**
-```
-gws drive +upload ./report.csv --parent FOLDER_ID --name "Отчёт.csv"
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 **Скачать файл:**
-```
-gws drive files get --params '{"fileId": "FILE_ID", "alt": "media"}' --output ./local/report.pdf
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
+
 Для Google Docs/Sheets/Slides используй экспорт, выбрав поддерживаемый MIME-тип:
-```
-gws drive files export --params '{"fileId": "FILE_ID", "mimeType": "application/pdf"}' --output ./local/report.pdf
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
+
 `files download` возвращает длительную операцию, а не байты файла: если нужен именно этот метод, обработай статус операции и полученный URL скачивания. Перед записью проверь, что локальная папка существует и выбранный путь не перезапишет нужный файл.
 
 **Создать папку:**
-```
-gws drive files create --json '{"name": "Новая папка", "mimeType": "application/vnd.google-apps.folder", "parents": ["PARENT_ID"]}'
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 **Переместить файл в другую папку** (у Drive нет отдельного метода "move" — это patch по родителям):
-```
-gws drive files update --params '{"fileId": "FILE_ID", "addParents": "NEW_FOLDER_ID", "removeParents": "OLD_FOLDER_ID"}'
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 **Расшарить файл/папку:**
-```
-gws drive permissions create --params '{"fileId": "FILE_ID"}' --json '{"role": "writer", "type": "user", "emailAddress": "someone@example.com"}'
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
+
 `role`: `reader` / `writer` / `commenter` / `owner`. `type`: `user` / `group` / `domain` / `anyone`.
 
 ## Если нужного метода нет среди примеров
 
 Не угадывай названия полей JSON — посмотри точную схему метода перед вызовом:
-```
-gws schema drive.files.list --resolve-refs
-gws schema drive.permissions.create --resolve-refs
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
+
 Без `--resolve-refs` схема короче, но вложенные `$ref` не раскрыты.
 
 ## Вывод

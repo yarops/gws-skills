@@ -7,31 +7,31 @@ description: Create, read, and edit Google Sheets through the gws CLI, including
 
 Та же CLI, сервис `sheets`:
 ```
-gws sheets <resource> <method> [--params '<JSON>'] [--json '<JSON>']
+gws sheets <resource> <method> [--params JSON] [--json JSON]
 ```
-Хелперы: `gws sheets +read --spreadsheet ID --range "Sheet1!A1:D10"` (только чтение) и `gws sheets +append --spreadsheet ID --values 'a,b,c'` / `--json-values '[["a","b"],["c","d"]]'` (один простой ряд через `--values`, несколько через `--json-values`).
+Хелперы: `gws sheets +read` (только чтение) и `gws sheets +append`
+(один простой ряд через `--values`, несколько через `--json-values`).
+Синтаксис передачи JSON используй из выбранного справочника.
 
 ## Окружение и оболочка
 
-Учитывай оболочку инструмента выполнения команд, указанную в контексте агента.
-Windows native обычно использует PowerShell; WSL — Linux-оболочку. Наличие Windows
-само по себе не означает PowerShell. Скрипт Python не определяет оболочку агента.
-Примеры ниже используют Bash/zsh; в PowerShell адаптируй переменные, переносы
-строк и экранирование. Для сложного JSON предпочитай локальный UTF-8 файл вместо
-встраивания текста в команду. Не используй Bash-конструкции в PowerShell.
+Перед выполнением команд выбери оболочку **инструмента выполнения агента** по
+его контексту или настройкам. Не определяй её только по ОС, `$SHELL`, встроенному
+терминалу приложения или окружению дочернего Python-процесса. Если сведений нет,
+проверь настроенный исполняемый файл оболочки доступным read-only инструментом;
+если определить его невозможно, уточни оболочку до выполнения команд.
 
-Помощник вызывает `gws` напрямую списком аргументов, без shell. На Linux/macOS
-запускай его через `python3`; на Windows проверь доступность Python 3.9+ через
-`py -3 --version` или `python --version` и используй найденную команду.
-Например, в PowerShell после определения абсолютного `$SkillDir`:
+- Bash/zsh, включая WSL и Git Bash: прочитай [команды Bash](references/bash.md).
+- PowerShell: прочитай [команды PowerShell](references/powershell.md); нужны 7.3+
+  и корректная передача аргументов внешним программам.
+- cmd, fish и другие оболочки: используй явный запуск доступного Bash/zsh или
+  PowerShell 7.3+, затем прочитай соответствующий справочник. Не переноси примеры
+  в неизвестную оболочку механически.
 
-```powershell
-py -3 "$SkillDir/scripts/create_tracker.py" --config ./tracker.json
-py -3 "$SkillDir/scripts/create_tracker.py" --resume SPREADSHEET_ID --config ./tracker.json
-```
-
-На Windows используй `--config`, чтобы не зависеть от передачи встроенного JSON
-через PowerShell.
+Читай только выбранный справочник. При смене среды выполнения выбери его заново.
+Методы API и JSON одинаковы; кавычки, переменные и переносы строк зависят от shell.
+Не используй `eval`, `Invoke-Expression` или конкатенацию пользовательского текста
+в исполняемую команду. Для динамического JSON используй сериализатор.
 
 ## Перед первым вызовом в сессии
 
@@ -41,18 +41,15 @@ py -3 "$SkillDir/scripts/create_tracker.py" --resume SPREADSHEET_ID --config ./t
 
 Для новой рабочей/трекинговой Google-таблицы со стандартным оформлением используй `scripts/create_tracker.py` вместо ручной сборки `batchUpdate` — так оформление заголовка одинаковое во всех таблицах, созданных через этот скилл, и не нужно каждый раз заново собирать JSON-схему форматирования:
 
-```
-python3 "$SKILL_DIR/scripts/create_tracker.py" "SEO: сведение контента по ключам" '["URL","Title","H1","Текущие ключи","Кластер","Частотность","Приоритет","Статус"]' "Страницы"
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
-Перед запуском установи `SKILL_DIR` в абсолютный путь директории этого скилла (по местоположению прочитанного `SKILL.md`); текущий каталог проекта не является директорией скилла. Требуются Python 3.9+ и исполняемый `gws` (на Windows — `gws.exe`). Bash и `jq` для помощника не нужны.
+Перед запуском установи `SKILL_DIR` (Bash) или `$SkillDir` (PowerShell) в абсолютный путь директории этого скилла (по местоположению прочитанного `SKILL.md`); текущий каталог проекта не является директорией скилла. Требуются Python 3.9+ и исполняемый `gws` (на Windows — `gws.exe`). Bash и `jq` для помощника не нужны.
 
 Аргументы: название таблицы, непустой JSON-массив заголовков, необязательное название вкладки (по умолчанию `Sheet1`). Скрипт создаёт spreadsheet, затем записывает заголовки как буквальный текст по `sheetId` и применяет стиль из `assets/header_style.json`. Обычная таблица настраивается одним `batchUpdate`; большая строка заголовков разбивается на запросы по размеру UTF-8 JSON ячеек (до 60000 байт плюс обёртка). Оформление применяется в последнем запросе. При сбое часть заголовков может быть записана; `--resume` повторяет запись с первой колонки. JSON отдельной ячейки больше 60000 байт отклоняется до создания файла. Оформление и автоширина ограничены числом заголовков. Ссылка выводится в stdout после успеха, а ID и URL — в stderr сразу после получения.
 
 Если настройка прервалась, продолжи без создания дубля:
-```
-python3 "$SKILL_DIR/scripts/create_tracker.py" --resume SPREADSHEET_ID '["URL","Title","H1","Текущие ключи","Кластер","Частотность","Приоритет","Статус"]' "Страницы"
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
+
 Передай те же заголовки и вкладку. Режим перезаписывает соответствующие ячейки первой строки и повторяет оформление; используй его для восстановления этой новой таблицы, а не для произвольной существующей таблицы. При неопределённом результате создания сначала найди файл в Drive; не запускай создание вслепую ещё раз.
 
 Если нужен другой визуальный стиль на постоянной основе — заведи ещё один файл-шаблон в `assets/` (например `header_style_light.json`), а не правь JSON на лету для одного запуска — так стиль остаётся переиспользуемым, а не одноразовым хаком.
@@ -73,12 +70,10 @@ python3 "$SKILL_DIR/scripts/create_tracker.py" --resume SPREADSHEET_ID '["URL","
 }
 ```
 
-```sh
-python3 "$SKILL_DIR/scripts/create_tracker.py" --config ./tracker.json
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 Конфигурация должна содержать непустые `title`, `sheets` и массивы строковых
-`headers`. Названия листов должны быть уникальными; Регистр при проверке
+`headers`. Названия листов должны быть уникальными; регистр при проверке
 уникальности не учитывается. Все заголовки проверяются до создания таблицы.
 Скрипт создаёт все листы одним `spreadsheets create`, затем последовательно
 записывает заголовки и применяет общий стиль к каждому листу по его `sheetId`.
@@ -88,9 +83,7 @@ python3 "$SKILL_DIR/scripts/create_tracker.py" --config ./tracker.json
 
 После сбоя используй тот же файл конфигурации:
 
-```sh
-python3 "$SKILL_DIR/scripts/create_tracker.py" --resume SPREADSHEET_ID --config ./tracker.json
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 Перед записью скрипт проверит наличие всех указанных листов и достаточное число
 колонок. Он сопоставляет листы по точному названию, не по порядку или сохранённым ID;
@@ -101,33 +94,22 @@ python3 "$SKILL_DIR/scripts/create_tracker.py" --resume SPREADSHEET_ID --config 
 ## Прямая работа с готовой таблицей
 
 **Прочитать диапазон:**
-```
-gws sheets +read --spreadsheet SPREADSHEET_ID --range "Страницы!A1:H100"
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 **Дописать строки в конец:**
-```
-gws sheets spreadsheets values append \
-  --params '{"spreadsheetId": "SPREADSHEET_ID", "range": "'\''Страницы'\''!A:H", "valueInputOption": "RAW", "insertDataOption": "INSERT_ROWS"}' \
-  --json '{"values": [["https://example.com/page","Title","..."]]}'
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 Для многолистовой таблицы указывай вкладку явно через `values append`; хелпер `+append` не принимает целевой диапазон. После добавления проверь `updates.updatedRange`. При сетевом сбое проверь, появились ли строки, прежде чем повторять append: повтор может создать дубли.
 
-Имена вкладок с пробелами/спецсимволами заключай в одинарные кавычки в A1 notation и экранируй апострофы. Для динамических имён предпочтительнее запись через `sheetId` в `batchUpdate`; JSON собирай через `jq`, а не конкатенацией пользовательского текста.
+Имена вкладок с пробелами/спецсимволами заключай в одинарные кавычки в A1 notation и экранируй апострофы. Для динамических имён предпочтительнее запись через `sheetId` в `batchUpdate`; JSON собирай через `jq`/Python в Bash или `ConvertTo-Json` в PowerShell, а не конкатенацией пользовательского текста.
 
 **Перезаписать диапазон** (например, обновить статус у конкретных строк):
-```
-gws sheets spreadsheets values update \
-  --params '{"spreadsheetId": "SPREADSHEET_ID", "range": "Страницы!H2:H2", "valueInputOption": "USER_ENTERED"}' \
-  --json '{"values": [["готово"]]}'
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
+
 `valueInputOption=USER_ENTERED` — значения интерпретируются как если бы их вписал человек (формулы, даты и т.п. распознаются). `RAW` — записываются буквально как строки без интерпретации.
 
 **Прочитать несколько диапазонов за один вызов:**
-```
-gws sheets spreadsheets values batchGet --params '{"spreadsheetId": "SPREADSHEET_ID", "ranges": ["Страницы!A1:H1", "Страницы!A50:H60"]}'
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 ## ID таблицы
 
@@ -136,9 +118,7 @@ gws sheets spreadsheets values batchGet --params '{"spreadsheetId": "SPREADSHEET
 ## Нестандартные операции / форматирование
 
 Примеры выше не покрывают весь API. Для сложных `batchUpdate`-запросов (условное форматирование, объединение ячеек, диаграммы и т.п.) сначала посмотри точную схему, а не угадывай названия полей:
-```
-gws schema sheets.spreadsheets.batchUpdate --resolve-refs
-```
+Команды для выбранной оболочки: [Bash](references/bash.md) / [PowerShell](references/powershell.md).
 
 ## Осторожно
 

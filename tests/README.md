@@ -223,3 +223,11 @@ usage отсутствует. Затем выполнен сетевой наб�
 ```sh
 python -B -m unittest discover -s tests -p test_tracker_portable.py -v
 ```
+
+Примеры Bash проверяются из `references/bash.md`, а PowerShell — из
+`references/powershell.md`. Отдельный Windows CI запускает
+`python -B -m unittest discover -s tests -p test_shell_examples.py -v`
+через установленный PowerShell 7.3+. Native-получатель проверяет переданные
+JSON-аргументы, UTF-8 конфигурацию трекера и прекращение цепочки после ошибки;
+настоящий `gws` и Google не вызываются. Если `pwsh` отсутствует локально,
+две PowerShell-проверки пропускаются, что не подтверждает их успешность.

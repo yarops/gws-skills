@@ -1,0 +1,44 @@
+{
+  "requests": [
+    {
+      "repeatCell": {
+        "range": {
+          "sheetId": __SHEET_ID__,
+          "startRowIndex": 0,
+          "endRowIndex": 1
+        },
+        "cell": {
+          "userEnteredFormat": {
+            "backgroundColor": { "red": 0.13, "green": 0.15, "blue": 0.2 },
+            "horizontalAlignment": "LEFT",
+            "textFormat": {
+              "foregroundColor": { "red": 1, "green": 1, "blue": 1 },
+              "bold": true,
+              "fontSize": 10
+            }
+          }
+        },
+        "fields": "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)"
+      }
+    },
+    {
+      "updateSheetProperties": {
+        "properties": {
+          "sheetId": __SHEET_ID__,
+          "gridProperties": { "frozenRowCount": 1 }
+        },
+        "fields": "gridProperties.frozenRowCount"
+      }
+    },
+    {
+      "autoResizeDimensions": {
+        "dimensions": {
+          "sheetId": __SHEET_ID__,
+          "dimension": "COLUMNS",
+          "startIndex": 0,
+          "endIndex": 12
+        }
+      }
+    }
+  ]
+}

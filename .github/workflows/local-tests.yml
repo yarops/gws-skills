@@ -23,6 +23,21 @@ permissions:
   contents: read
 
 jobs:
+  bash-installers:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.9'
+      - name: Test Bash installer
+        run: python3 -B -m unittest discover -s tests -p test_install.py -v
   powershell-examples:
     runs-on: windows-latest
     timeout-minutes: 5

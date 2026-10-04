@@ -6,12 +6,16 @@ on:
       - 'gws-drive/**'
       - 'gws-sheets/**'
       - 'tests/**'
+      - 'install.ps1'
+      - 'install.sh'
       - '.github/workflows/local-tests.yml'
   pull_request:
     paths:
       - 'gws-drive/**'
       - 'gws-sheets/**'
       - 'tests/**'
+      - 'install.ps1'
+      - 'install.sh'
       - '.github/workflows/local-tests.yml'
   workflow_dispatch:
 
@@ -36,6 +40,8 @@ jobs:
           if (-not (Get-Command pwsh -CommandType Application -ErrorAction Stop)) { throw 'pwsh unavailable' }
       - name: Check documented native arguments and failures
         run: python -B -m unittest discover -s tests -p test_shell_examples.py -v
+      - name: Test PowerShell installer
+        run: python -B -m unittest discover -s tests -p test_install_powershell.py -v
   portable-tracker:
     strategy:
       matrix:

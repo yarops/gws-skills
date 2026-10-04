@@ -78,6 +78,70 @@ class SkillFilesTests(OfflineCase):
 
 
 class TrackerTests(OfflineCase):
+    def config_file(self, config):
+        path = self.work / "tracker config.json"
+        path.write_text(json.dumps(config, ensure_ascii=False))
+        return str(path)
+
+    def test_config_creates_and_styles_three_sheets(self):
+        config = {"title": "План", "sheets": [
+            {"title": "Статьи", "headers": ["URL", "Статус"]},
+            {"title": "Ключи", "headers": ["=literal"]},
+            {"title": "Сводка", "headers": ["Имя", "Значение", "Дата"]}]}
+        result = self.run_tracker("--config", self.config_file(config))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, URL + "\n")
+        calls = self.calls()
+        create = self.payload(calls[0])
+        self.assertEqual(create["properties"]["title"], config["title"])
+        self.assertEqual(len(create["sheets"]), 3)
+        self.assertEqual(len(calls), 4)
+        for i, sheet in enumerate(config["sheets"]):
+            self.assertEqual(create["sheets"][i]["properties"], {
+                "title": sheet["title"], "gridProperties": {"columnCount": len(sheet["headers"])}})
+            requests = self.payload(calls[i + 1])["requests"]
+            self.assertEqual(requests[0]["updateCells"]["start"]["sheetId"], 42 + i)
+            self.assertEqual(requests[0]["updateCells"]["rows"][0]["values"],
+                             [{"userEnteredValue": {"stringValue": h}} for h in sheet["headers"]])
+            self.assertEqual(requests[1]["repeatCell"]["range"]["endColumnIndex"], len(sheet["headers"]))
+            self.assertEqual(requests[2]["updateSheetProperties"]["properties"]["sheetId"], 42 + i)
+
+    def test_config_failure_and_resume_by_title(self):
+        config = {"title": "T", "sheets": [
+            {"title": "A", "headers": ["a"]}, {"title": "B", "headers": ["b", "c"]}]}
+        path = self.config_file(config)
+        result = self.run_tracker("--config", path, GWS_TEST_FAIL="batchUpdate", GWS_TEST_FAIL_AT="2")
+        self.assertEqual(result.returncode, 7)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("--resume", result.stderr)
+        self.log.write_text("")
+        response = {"spreadsheetId": "test-sheet-id", "spreadsheetUrl": URL, "sheets": [
+            {"properties": {"sheetId": 8, "title": "B", "gridProperties": {"columnCount": 2}}},
+            {"properties": {"sheetId": 0, "title": "A", "gridProperties": {"columnCount": 1}}}]}
+        result = self.run_tracker("--resume", "test-sheet-id", "--config", path,
+                                  GWS_TEST_RESPONSE=json.dumps(response))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual([c[2] for c in self.calls()], ["get", "batchUpdate", "batchUpdate"])
+        self.assertEqual([self.payload(c)["requests"][0]["updateCells"]["start"]["sheetId"]
+                          for c in self.calls()[1:]], [0, 8])
+        self.log.write_text("")
+        response["sheets"].pop(0)
+        result = self.run_tracker("--resume", "test-sheet-id", "--config", path,
+                                  GWS_TEST_RESPONSE=json.dumps(response))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual([c[2] for c in self.calls()], ["get"])
+
+    def test_invalid_configs_never_call_gws(self):
+        for config in ({}, {"title": "T", "sheets": []},
+                       {"title": "T", "sheets": [{"title": "A", "headers": []}]},
+                       {"title": "T", "sheets": [{"title": "A", "headers": ["a"]},
+                                                  {"title": "a", "headers": ["b"]}]},
+                       {"title": "T", "sheets": [{"title": "A", "headers": ["a"]},
+                                                  {"title": "B", "headers": ["x" * 60000]}]}):
+            with self.subTest(config=str(config)[:100]):
+                self.assertNotEqual(self.run_tracker("--config", self.config_file(config)).returncode, 0)
+                self.assertEqual(self.calls(), [])
+
     def test_create_defaults(self):
         result = self.run_tracker("Tracker", '["URL","Status"]')
         self.assertEqual(result.returncode, 0, result.stderr)

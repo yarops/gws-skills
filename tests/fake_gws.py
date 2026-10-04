@@ -20,11 +20,11 @@ if args[:3] in (["sheets", "spreadsheets", "create"], ["sheets", "spreadsheets",
     response = os.environ.get("GWS_TEST_RESPONSE")
     if response is None:
         payload = json.loads(args[args.index("--json") + 1]) if "--json" in args else {}
-        tab = payload.get("sheets", [{}])[0].get("properties", {}).get("title", "Sheet1")
+        tabs = [sheet.get("properties", {}).get("title", "Sheet1") for sheet in payload.get("sheets", [{}])]
         response = json.dumps({
             "spreadsheetId": "test-sheet-id",
             "spreadsheetUrl": "https://docs.google.com/spreadsheets/d/test-sheet-id/edit",
-            "sheets": [{"properties": {"sheetId": 42, "title": tab, "gridProperties": {"columnCount": 18278}}}],
+            "sheets": [{"properties": {"sheetId": 42 + i, "title": tab, "gridProperties": {"columnCount": 18278}}} for i, tab in enumerate(tabs)],
         })
     print(response)
 else:

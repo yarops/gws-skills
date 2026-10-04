@@ -8,6 +8,17 @@
 - `gws-sheets/` — скилл для Google Sheets через `gws`; включает `assets/header_style.json` (шаблон оформления заголовка таблицы) и `scripts/create_tracker.sh` (создаёт таблицу с уже применённым единым стилем; заголовки принимает JSON-массивом, `--resume` завершает настройку созданного файла после сбоя).
 - `plans/` — локальные рабочие планы по доработке скиллов (не коммитится, см. `.gitignore`).
 
+Для создания таблицы сразу с несколькими листами скрипт Sheets принимает
+`--config FILE`: название таблицы и массив листов с названиями и заголовками.
+Пример — [tracker_example.json](gws-sheets/assets/tracker_example.json).
+Старый вызов с одним листом сохраняется.
+
+```sh
+./gws-sheets/scripts/create_tracker.sh --config ./gws-sheets/assets/tracker_example.json
+# После сбоя настройки — тот же файл и ID созданной таблицы:
+./gws-sheets/scripts/create_tracker.sh --resume SPREADSHEET_ID --config ./gws-sheets/assets/tracker_example.json
+```
+
 ## Проверка
 
 Локальные тесты без моделей, сети и доступа к Google:

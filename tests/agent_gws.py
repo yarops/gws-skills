@@ -89,10 +89,10 @@ def evaluate(scenario, work, fixture, events, skill_root=None):
                     if e.get('type') == 'item.completed'
                     and e.get('item', {}).get('type') == 'command_execution'
                     and e.get('item', {}).get('exit_code') == 0]
-        script = str((skill_root or work) / '.agents/skills/gws-sheets/scripts/create_tracker.sh')
+        script = str((skill_root or work) / '.agents/skills/gws-sheets/scripts/create_tracker.py')
         # Require an executable position in a successful shell command, not a
         # mention in an agent message or `cat script`.
-        pattern = r'(?:^|[;&]|\s-l?c\s+[\x27\x22])\s*[\x27\x22]?(?:bash\s+)?[\x27\x22]?(?:' + re.escape(script) + r'|\$\{?SKILL_DIR\}?/scripts/create_tracker\.sh)[\x27\x22]?\s'
+        pattern = r'(?:^|[;&]|\s-l?c\s+[\x27\x22])\s*[\x27\x22]?(?:(?:python3|python|py -3)\s+)?[\x27\x22]?(?:' + re.escape(script) + r'|\$\{?SKILL_DIR\}?/scripts/create_tracker\.py)[\x27\x22]?\s'
         instructions['tracker_script'] = any(
             re.search(pattern, c + ' ') and (script in c or str(Path(script).parent.parent) in c)
             for c in commands)

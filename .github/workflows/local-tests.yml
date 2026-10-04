@@ -19,6 +19,21 @@ permissions:
   contents: read
 
 jobs:
+  portable-tracker:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.9'
+      - name: Test portable Python tracker
+        run: python -B -m unittest discover -s tests -p test_tracker_portable.py -v
   local-tests:
     runs-on: ubuntu-24.04
     timeout-minutes: 10

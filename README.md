@@ -5,7 +5,7 @@
 ## Структура
 
 - `gws-drive/` — скилл для работы с Google Drive через `gws`.
-- `gws-sheets/` — скилл для Google Sheets через `gws`; включает `assets/header_style.json` (шаблон оформления заголовка таблицы) и `scripts/create_tracker.sh` (создаёт таблицу с уже применённым единым стилем; заголовки принимает JSON-массивом, `--resume` завершает настройку созданного файла после сбоя).
+- `gws-sheets/` — скилл для Google Sheets через `gws`; включает `assets/header_style.json` (шаблон оформления заголовка таблицы) и `scripts/create_tracker.py` (создаёт таблицу с уже применённым единым стилем; заголовки принимает JSON-массивом, `--resume` завершает настройку созданного файла после сбоя).
 - `plans/` — локальные рабочие планы по доработке скиллов (не коммитится, см. `.gitignore`).
 
 Для создания таблицы сразу с несколькими листами скрипт Sheets принимает
@@ -14,9 +14,9 @@
 Старый вызов с одним листом сохраняется.
 
 ```sh
-./gws-sheets/scripts/create_tracker.sh --config ./gws-sheets/assets/tracker_example.json
+python3 ./gws-sheets/scripts/create_tracker.py --config ./gws-sheets/assets/tracker_example.json
 # После сбоя настройки — тот же файл и ID созданной таблицы:
-./gws-sheets/scripts/create_tracker.sh --resume SPREADSHEET_ID --config ./gws-sheets/assets/tracker_example.json
+python3 ./gws-sheets/scripts/create_tracker.py --resume SPREADSHEET_ID --config ./gws-sheets/assets/tracker_example.json
 ```
 
 ## Проверка
@@ -60,6 +60,17 @@ python3 -B tests/integration_gws.py --live
 копии: последующие правки в репозитории не меняют установленную версию.
 
 Для работы нужны установленный и авторизованный `gws`, а для скрипта Sheets —
-также `jq`. После установки проверьте каталог скиллов в новой сессии агента:
+также Python 3.9+ (помощнику не нужны Bash и `jq`). После установки проверьте каталог скиллов в новой сессии агента:
 оба скилла должны обнаруживаться, а скрипт и шаблон Sheets — быть доступны
 относительно установленного `SKILL.md`. Установщика для Windows пока нет.
+
+Помощник создания таблиц работает на Python 3.9+ без сторонних пакетов и вызывает
+`gws` напрямую. На Windows нужен `gws.exe`; для запуска в PowerShell:
+
+```powershell
+py -3 ./gws-sheets/scripts/create_tracker.py --config ./gws-sheets/assets/tracker_example.json
+```
+
+Если `py` недоступен, используйте установленный Python 3 через `python`.
+Установщик `install.sh` остаётся для macOS/Linux; на Windows каталоги скиллов
+можно скопировать вручную.

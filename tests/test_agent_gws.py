@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from types import SimpleNamespace
@@ -44,8 +45,8 @@ class AgentScenarioTests(unittest.TestCase):
 
     def test_tracker_append_read_and_grader(self):
         self.gws('auth', 'status')
-        script = self.work / '.agents/skills/gws-sheets/scripts/create_tracker.sh'
-        run = subprocess.run([str(script), 'Агент: тест', json.dumps(HEADERS), 'Страницы'],
+        script = self.work / '.agents/skills/gws-sheets/scripts/create_tracker.py'
+        run = subprocess.run([sys.executable, str(script), 'Агент: тест', json.dumps(HEADERS), 'Страницы'],
                              cwd=self.work, env=self.env, capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         params = {'spreadsheetId': 'fixture-sheet', 'range': "'Страницы'!A:C", 'valueInputOption': 'RAW'}
@@ -54,7 +55,7 @@ class AgentScenarioTests(unittest.TestCase):
         self.assertEqual(append.returncode, 0, append.stderr)
         self.gws('sheets', '+read', '--spreadsheet', 'fixture-sheet', '--range', 'Страницы!A1:C3')
         events = [{'type': 'item.completed', 'item': {'type': 'command_execution',
-                   'command': str(script), 'exit_code': 0}}]
+                   'command': 'python3 ' + str(script), 'exit_code': 0}}]
         self.assertTrue(evaluate('sheets', self.work, self.fixture, events)['passed'])
         self.assertFalse(evaluate('sheets', self.work, self.fixture, [])['passed'])
         mention = [{'type': 'item.completed', 'item': {'type': 'command_execution',

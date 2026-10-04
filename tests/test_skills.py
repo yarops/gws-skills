@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "gws-sheets/scripts/create_tracker.sh"
+SCRIPT = ROOT / "gws-sheets/scripts/create_tracker.py"
 URL = "https://docs.google.com/spreadsheets/d/test-sheet-id/edit"
 
 
@@ -20,7 +20,7 @@ class OfflineCase(unittest.TestCase):
         self.work = Path(self.tmp.name)
         self.log = self.work / "calls.jsonl"
         # Isolated PATH: neither an installed gws nor an agent can be called.
-        for name in ("bash", "jq", "dirname"):
+        for name in ("bash", "jq", "dirname", "python3"):
             source = shutil.which(name)
             if source is None:
                 self.fail(f"Install required test dependency: {name}")
@@ -36,7 +36,7 @@ class OfflineCase(unittest.TestCase):
         return [json.loads(line) for line in self.log.read_text().splitlines()] if self.log.exists() else []
 
     def run_tracker(self, *args, **env):
-        return subprocess.run([str(self.work / "bash"), str(SCRIPT), *args],
+        return subprocess.run([sys.executable, str(SCRIPT), *args],
                               cwd=self.work, env=self.env | env, text=True,
                               capture_output=True, timeout=15)
 
@@ -55,10 +55,6 @@ class SkillFilesTests(OfflineCase):
                 self.assertRegex(metadata[1], r"(?m)^description: \S.+$")
                 for resource in re.findall(r"`((?:scripts|assets)/[^`\s]+)`", text):
                     self.assertTrue((ROOT / name / resource).is_file(), resource)
-
-    def test_bash_syntax(self):
-        result = subprocess.run([str(self.work / "bash"), "-n", str(SCRIPT)], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_documented_commands_parse_and_have_valid_json(self):
         count = 0
@@ -201,7 +197,7 @@ class TrackerTests(OfflineCase):
                 self.assertEqual(self.calls(), [])
 
     def test_missing_dependencies_never_call_gws(self):
-        for dependency in ("gws", "jq"):
+        for dependency in ("gws",):
             with self.subTest(dependency=dependency):
                 original = self.work / dependency
                 backup = self.work / (dependency + ".saved")

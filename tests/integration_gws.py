@@ -64,7 +64,7 @@ class Run:
 
     def tracker(self, *args):
         try:
-            return self.command(["bash", str(ROOT / "gws-sheets/scripts/create_tracker.sh"), *args])
+            return self.command([sys.executable, str(ROOT / "gws-sheets/scripts/create_tracker.py"), *args])
         finally:
             # Recover a known ID even when configuration failed or timed out.
             entry = self.report["commands"][-1]

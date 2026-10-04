@@ -38,7 +38,7 @@ for skill in "${skills[@]}"; do
   [[ -f "$source_dir/$skill/SKILL.md" ]] || fail "Missing source: $skill/SKILL.md"
 done
 [[ -f "$source_dir/gws-sheets/assets/header_style.json" ]] || fail 'Missing Sheets style'
-[[ -x "$source_dir/gws-sheets/scripts/create_tracker.sh" ]] || fail 'Missing executable Sheets helper'
+[[ -f "$source_dir/gws-sheets/scripts/create_tracker.py" ]] || fail 'Missing Python Sheets helper'
 
 # Resolve the destination before checking containment and conflicts.
 [[ "$dest" = /* ]] || dest="$PWD/$dest"

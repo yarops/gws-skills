@@ -1,0 +1,98 @@
+[
+  {
+    "id": "drive-download",
+    "target": "gws-drive",
+    "expected": [
+      "gws-drive"
+    ],
+    "prompt": "Скачай все файлы MIME text/plain из папки fixture-folder в Google Drive в существующую пустую директорию downloads. Сохрани исходные имена и содержимое. Другие файлы не скачивай.",
+    "check": "drive"
+  },
+  {
+    "id": "drive-list",
+    "target": "gws-drive",
+    "expected": [
+      "gws-drive"
+    ],
+    "prompt": "Покажи все файлы в папке fixture-folder на гугл диске: названия и MIME-типы. Учти все страницы результатов.",
+    "check": "drive-list"
+  },
+  {
+    "id": "drive-metadata",
+    "target": "gws-drive",
+    "expected": [
+      "gws-drive"
+    ],
+    "prompt": "Узнай название и тип файла file-a в Google Drive. Содержимое скачивать не нужно.",
+    "check": "drive-metadata"
+  },
+  {
+    "id": "drive-local-read",
+    "target": "gws-drive",
+    "expected": [],
+    "prompt": "Прочитай локальный notes.txt и выведи его содержимое в ответе.",
+    "check": "local"
+  },
+  {
+    "id": "drive-local-list",
+    "target": "gws-drive",
+    "expected": [],
+    "prompt": "Покажи имена обычных локальных файлов в текущей директории, без скрытых каталогов.",
+    "check": "local"
+  },
+  {
+    "id": "drive-local-copy",
+    "target": "gws-drive",
+    "expected": [],
+    "prompt": "Скопируй локальный notes.txt в downloads/notes-copy.txt и проверь совпадение содержимого.",
+    "check": "local"
+  },
+  {
+    "id": "sheets-create",
+    "target": "gws-sheets",
+    "expected": [
+      "gws-sheets"
+    ],
+    "prompt": "Создай новую Google-таблицу Агент: тест с обычным оформлением трекера, вкладкой Страницы и заголовками [\"URL\",\"=1+1\",\"Статус\"]. Добавь две строки: [\"https://example.com/а\",\"=2+2\",\"готово\"] и [\"https://example.com/b\",\"текст\",\"в работе\"]. Все значения должны остаться буквальным текстом. Проверь результат и дай ссылку.",
+    "check": "sheets"
+  },
+  {
+    "id": "sheets-read",
+    "target": "gws-sheets",
+    "expected": [
+      "gws-sheets"
+    ],
+    "prompt": "Прочитай диапазон Страницы!A1:C3 в Google Sheets https://docs.google.com/spreadsheets/d/fixture-sheet/edit и покажи значения в ответе. Не меняй таблицу.",
+    "check": "sheets-read"
+  },
+  {
+    "id": "sheets-append",
+    "target": "gws-sheets",
+    "expected": [
+      "gws-sheets"
+    ],
+    "prompt": "Добавь в гугл таблицу https://docs.google.com/spreadsheets/d/fixture-sheet/edit на вкладку Страницы две строки: [\"https://example.com/а\",\"=2+2\",\"готово\"] и [\"https://example.com/b\",\"текст\",\"в работе\"]. Сохрани заголовки и буквальный текст всех значений.",
+    "check": "sheets-append"
+  },
+  {
+    "id": "sheets-markdown",
+    "target": "gws-sheets",
+    "expected": [],
+    "prompt": "Составь прямо в ответе Markdown-таблицу трекера задач с колонками Задача и Статус и двумя примерами строк.",
+    "check": "local"
+  },
+  {
+    "id": "sheets-csv",
+    "target": "gws-sheets",
+    "expected": [],
+    "prompt": "Прочитай локальный data.csv и вычисли сумму колонки value. Напиши результат в ответе.",
+    "check": "local"
+  },
+  {
+    "id": "sheets-arithmetic",
+    "target": "gws-sheets",
+    "expected": [],
+    "prompt": "Посчитай среднее арифметическое чисел 12, 18 и 24 и объясни вычисление.",
+    "check": "local"
+  }
+]

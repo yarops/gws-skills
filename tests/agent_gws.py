@@ -23,7 +23,7 @@ FILES = {'file-a': {'name': 'Отчёт.txt', 'mimeType': 'text/plain', 'content
          'file-c': {'name': 'ignore.bin', 'mimeType': 'application/octet-stream', 'content': 'skip'}}
 
 
-def prepare(base, scenario):
+def prepare(base, scenario, selection_case=None):
     work = base / 'work'
     work.mkdir()
     (work / 'downloads').mkdir()
@@ -50,6 +50,9 @@ def prepare(base, scenario):
         'Не изменяй скилы. Выполни задачу самостоятельно без делегирования.\n')
     spec = json.loads((SCENARIOS / (scenario + '.json')).read_text())
     prompt = spec['prompt'] + '\nСкил находится в ' + str(work / '.agents/skills' / spec['skill'] / 'SKILL.md')
+    if selection_case is not None:
+        from selection_gws import setup_case
+        prompt = setup_case(selection_case, work, fixture)
     env = {'PATH': str(binary), 'LANG': 'C.UTF-8', 'GWS_AGENT_FIXTURE': str(fixture)}
     return work, fixture, prompt, env
 
@@ -136,7 +139,8 @@ def run(args):
         for s in ('gws-drive', 'gws-sheets') for p in sorted((ROOT / s).rglob('*')) if p.is_file()}
     with tempfile.TemporaryDirectory(prefix='gws-agent-') as tmp:
         base = Path(tmp)
-        work, fixture, prompt, env = prepare(base, args.scenario)
+        selection_case = getattr(args, 'selection_case', None)
+        work, fixture, prompt, env = prepare(base, args.scenario, selection_case)
         home = base / 'codex-home'
         home.mkdir(mode=0o700)
         if auth.is_file():
@@ -163,6 +167,15 @@ def run(args):
                    '-c', 'web_search="disabled"', '-']
         (report / 'prompt.txt').write_text(prompt)
         (report / 'command.json').write_text(json.dumps(command, ensure_ascii=False, indent=2))
+        if selection_case is not None:
+            from selection_gws import discovery, grade
+            preflight = discovery(command, cli_env, work, report)
+            summary.update(case=selection_case, discovery=preflight)
+            if not preflight['passed']:
+                summary.update(passed=False, stop_reason='skill_discovery', completed=False)
+                (report / 'report.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2))
+                print(json.dumps({'passed': False, 'report': str(report / 'report.json')}))
+                return 1
         started = time.monotonic()
         events = []
         with (report / 'events.jsonl').open('w') as stdout, (report / 'stderr.log').open('w') as stderr:
@@ -205,7 +218,8 @@ def run(args):
         summary['reported_tokens'] = sum(u.get('input_tokens', 0) + u.get('output_tokens', 0)
                                          for u in summary['usage'])
         summary['token_threshold_exceeded'] = summary['reported_tokens'] > args.max_tokens
-        summary.update(evaluate(args.scenario, work, fixture, events))
+        summary.update(grade(selection_case, work, fixture, events) if selection_case is not None
+                       else evaluate(args.scenario, work, fixture, events))
         summary['behavior_passed'] = summary['passed']
         summary['passed'] = (summary['behavior_passed'] and summary['completed']
                              and process.returncode == 0 and reason is None

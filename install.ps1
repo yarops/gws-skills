@@ -25,7 +25,9 @@ foreach ($required in @('gws-drive/SKILL.md', 'gws-sheets/SKILL.md',
 
 # Reject junctions and symlinks in destination ancestors so containment checks
 # cannot be bypassed by a redirected directory (including a dangling link).
-$destination = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Dest)
+# Normalize separators and dot segments before comparing with source paths.
+# PowerShell's provider resolution can retain forward slashes on Windows.
+$destination = [IO.Path]::GetFullPath($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Dest))
 $ancestor = $destination
 while ($ancestor) {
     $entry = Get-Item -LiteralPath $ancestor -Force -ErrorAction SilentlyContinue

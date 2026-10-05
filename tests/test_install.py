@@ -23,7 +23,9 @@ class InstallerContract:
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.work = pathlib.Path(self.temp.name)
+        # Windows TEMP may use an 8.3 alias (RUNNER~1), while PowerShell
+        # reports the expanded path. Use the canonical path for assertions.
+        self.work = pathlib.Path(self.temp.name).resolve()
         self.repo = self.work / 'repo'
         self.repo.mkdir()
         for skill in SKILLS:
